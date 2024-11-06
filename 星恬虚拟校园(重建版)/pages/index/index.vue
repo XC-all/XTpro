@@ -1,7 +1,42 @@
 <template>
+	<!-- 添加侧边栏遮罩层 -->
+	<view class="sidebar-mask" v-if="showSidebar" @tap="closeSidebar"></view>
+
+	<!-- 添加侧边栏 -->
+	<view class="sidebar" :class="{ 'sidebar-show': showSidebar }">
+		<!-- 头像区域 -->
+		<view class="sidebar-header">
+			<image class="avatar"
+				src="https://static.codemao.cn/coco/player/unstable/HkkBKiguA.image/jpeg?hash=FkJPWrLJZxbdTKslIQvZ6bIbjE0Y"
+				mode="aspectFill"></image>
+			<text class="username">星恬用户</text>
+		</view>
+
+		<!-- 会员信息 -->
+		<view class="vip-info">
+			<text class="vip-title">高级会员</text>
+			<view class="vip-time">
+				<text>已为您保障</text>
+				<text class="time-text">{{ timeString }}</text>
+			</view>
+		</view>
+
+		<!-- 功能列表 -->
+		<view class="menu-list">
+			<view class="menu-item" v-for="(item, index) in menuItems" :key="index" @tap="handleMenuItem(index)">
+				<text class="menu-text">{{ item }}</text>
+			</view>
+		</view>
+	</view>
+
+	<!-- 原有内容保持不变 -->
 	<view class="container" :style="{ paddingTop: statusBarHeight + 'px' }">
 		<!-- 导航栏部分 -->
 		<view class="nav-bar" :style="{ top: statusBarHeight + 'px' }">
+			<!-- 添加三按钮 -->
+			<view class="nav-item menu-btn" @tap="goToVip">
+				<text class="nav-text">三</text>
+			</view>
 			<view v-for="(item, index) in navItems" :key="index" class="nav-item"
 				:class="{ active: currentNav === index }" @tap="switchNav(index)">
 				<text class="nav-text" :class="{ active: currentNav === index }">{{ item }}</text>
@@ -35,6 +70,23 @@
 
 			<!-- 列表部分 -->
 			<view class="list-container">
+				<view class="list-item">
+					<view class="item-left">
+						<image
+							src="https://static.bcmcdn.com/coco/player/unstable/rkKh-frZ1x.image/png?hash=Fn2McqoXcAkZBzSiIvslA6h6KX_m"
+							mode="aspectFill" class="item-image"></image>
+					</view>
+					<view class="item-right">
+						<view class="username">用户名</view>
+						<view class="badges">
+							<text class="badge admin">管理员</text>
+							<text class="badge top">置顶</text>
+							<text class="badge king">自律之王</text>
+						</view>
+						<view class="content">测试1</view>
+						<view class="sub-content">文字内容2</view>
+					</view>
+				</view>
 				<view class="list-item">
 					<view class="item-left">
 						<image
@@ -98,6 +150,19 @@ export default {
 			currentTab: 0,
 			statusBarHeight: 0,
 			isRefreshing: false,
+			showSidebar: false,
+			menuItems: ['我的钱包', '会员中心', '认证中心', '专属客服'],
+			days: 15,
+			hours: 20,
+			minutes: 15,
+			seconds: 15,
+			timer: null,
+			startTime: null
+		}
+	},
+	computed: {
+		timeString() {
+			return `${this.days}天${this.hours}时${this.minutes}分${this.seconds}秒`
 		}
 	},
 	onLoad() {
@@ -129,6 +194,65 @@ export default {
 			uni.stopPullDownRefresh();
 			this.isRefreshing = false;
 		},
+		// 添加跳转到会员页面的方法
+		goToVip() {
+			this.showSidebar = true
+			this.startTimer()
+		},
+		closeSidebar() {
+			this.showSidebar = false
+			if (this.timer) {
+				clearInterval(this.timer)
+			}
+		},
+		startTimer() {
+			if (this.timer) {
+				clearInterval(this.timer)
+			}
+
+			// 如果是第一次启动，记录开始时间
+			if (!this.startTime) {
+				this.startTime = new Date().getTime() - (
+					this.days * 24 * 60 * 60 * 1000 +
+					this.hours * 60 * 60 * 1000 +
+					this.minutes * 60 * 1000 +
+					this.seconds * 1000
+				);
+			}
+
+			this.timer = setInterval(() => {
+				const now = new Date().getTime();
+				const diff = now - this.startTime;
+
+				this.days = Math.floor(diff / (24 * 60 * 60 * 1000));
+				this.hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+				this.minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+				this.seconds = Math.floor((diff % (60 * 1000)) / 1000);
+			}, 1000);
+		},
+		handleMenuItem(index) {
+			switch (index) {
+				case 0:
+					// 我的钱包
+					break
+				case 1:
+					// 会员中心
+					uni.navigateTo({ url: '/pages/vip/vip' })
+					this.closeSidebar()
+					break
+				case 2:
+					// 认证中心
+					break
+				case 3:
+					// 专属客服
+					break
+			}
+		}
+	},
+	onUnload() {
+		if (this.timer) {
+			clearInterval(this.timer)
+		}
 	}
 }
 </script>
@@ -150,8 +274,19 @@ export default {
 	display: flex;
 	justify-content: space-around;
 	height: 80rpx;
-	background: #fff;
-	border-bottom: 1rpx solid #eee;
+	background: transparent;
+	border-bottom: none;
+
+	.menu-btn {
+		width: 80rpx; // 给"三"按钮一个固定宽度
+		flex: none; // 防止被拉伸
+
+		.nav-text {
+			font-size: 32rpx;
+			color: #333;
+			transform: translateY(-3px);
+		}
+	}
 
 	.nav-item {
 		flex: 1;
@@ -296,11 +431,12 @@ export default {
 		background: #fff;
 		display: flex;
 		padding: 24rpx;
-		border-bottom: 1rpx solid #f5f5f5;
+		margin-bottom: 16rpx;
+		border-bottom: none;
 		transition: all 0.3s;
 
 		&:last-child {
-			border-bottom: none;
+			margin-bottom: 0;
 		}
 
 		&:active {
@@ -335,13 +471,18 @@ export default {
 				display: flex;
 				align-items: center;
 				flex-wrap: wrap;
-				gap: 8rpx;
+				gap: 10rpx;
 
 				.badge {
 					padding: 4rpx 16rpx;
 					border-radius: 6rpx;
 					font-size: 20rpx;
 					box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
+					margin-right: 10rpx;
+
+					&:last-child {
+						margin-right: 0;
+					}
 
 					&.admin {
 						background: #FFA500;
@@ -449,5 +590,123 @@ export default {
 
 .refresh-indicator {
 	display: none;
+}
+
+.sidebar-mask {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.5);
+	z-index: 998;
+}
+
+.sidebar {
+	position: fixed;
+	top: 0;
+	left: -80%;
+	width: 80%;
+	height: 100%;
+	background: #fff;
+	z-index: 999;
+	transition: all 0.3s ease;
+	box-shadow: 2rpx 0 20rpx rgba(0, 0, 0, 0.1);
+
+	&.sidebar-show {
+		left: 0;
+	}
+
+	.sidebar-header {
+		padding: calc(env(safe-area-inset-top) + 60rpx) 40rpx 20rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		.avatar {
+			width: 120rpx;
+			height: 120rpx;
+			border-radius: 60rpx;
+			box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
+			margin-bottom: 20rpx;
+		}
+
+		.username {
+			font-size: 32rpx;
+			color: #FFB800;
+			font-weight: bold;
+		}
+	}
+
+	.vip-info {
+		padding: 0 40rpx 40rpx;
+		text-align: center;
+
+		.vip-title {
+			font-size: 36rpx;
+			color: #FFB800;
+			font-weight: bold;
+			margin-bottom: 20rpx;
+			display: block;
+			text-align: center;
+		}
+
+		.vip-time {
+			font-size: 28rpx;
+			color: #666;
+			text-align: center;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-wrap: wrap;
+
+			.time-text {
+				color: #FFB800;
+				margin-left: 10rpx;
+			}
+		}
+	}
+
+	.menu-list {
+		padding: 20rpx 0;
+
+		.menu-item {
+			height: 100rpx;
+			display: flex;
+			align-items: center;
+			padding: 0 40rpx;
+			background: #fff;
+			margin: 0 20rpx 20rpx;
+			border-radius: 16rpx;
+			transition: all 0.3s;
+			box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+			position: relative;
+			overflow: hidden;
+
+			&::after {
+				content: '';
+				position: absolute;
+				right: 30rpx;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 12rpx;
+				height: 12rpx;
+				border-top: 2rpx solid #999;
+				border-right: 2rpx solid #999;
+				transform: rotate(45deg);
+			}
+
+			&:active {
+				transform: scale(0.98);
+				background: #f9f9f9;
+			}
+
+			.menu-text {
+				font-size: 30rpx;
+				color: #333;
+				font-weight: 500;
+			}
+		}
+	}
 }
 </style>
